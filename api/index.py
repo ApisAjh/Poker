@@ -29,6 +29,7 @@ from bot.handlers import (
     cmd_leave,
     cmd_players,
     cmd_poker,
+    cmd_rules,
     cmd_start,
     cmd_startgame,
     cmd_tutorial,
@@ -58,6 +59,7 @@ ptb = (
 ptb.add_handler(CommandHandler("start", cmd_start))
 ptb.add_handler(CommandHandler("help", cmd_help))
 ptb.add_handler(CommandHandler("tutorial", cmd_tutorial))
+ptb.add_handler(CommandHandler("rules", cmd_rules))
 ptb.add_handler(CommandHandler("language", cmd_language))
 ptb.add_handler(CommandHandler("poker", cmd_poker))
 ptb.add_handler(CommandHandler("join", cmd_join))
