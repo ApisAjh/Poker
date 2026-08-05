@@ -17,6 +17,17 @@ from bot.keyboards import (
     language_keyboard,
     empty_keyboard,
 )
+from bot.tutorial import (
+    PAGE_ORDER,
+    has_seen_welcome,
+    mark_welcome_seen,
+    menu_keyboard,
+    menu_text,
+    nav_keyboard,
+    page_text,
+    welcome_keyboard,
+    welcome_text,
+)
 from locales import t, resolve_lang, set_lang
 
 logger = logging.getLogger(__name__)
@@ -102,18 +113,28 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
     lang = _lang(update)
-    await update.message.reply_text(t(lang, "start"), parse_mode=ParseMode.HTML)
+    text = t(lang, "start") + t(lang, "help_menu_hint")
+    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await cmd_start(update, context)
-
-
-async def cmd_tutorial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Open interactive tutorial menu."""
     if not update.message:
         return
     lang = _lang(update)
-    await update.message.reply_text(t(lang, "tutorial"), parse_mode=ParseMode.HTML)
+    await update.message.reply_text(
+        menu_text(lang),
+        parse_mode=ParseMode.HTML,
+        reply_markup=menu_keyboard(lang),
+    )
+
+
+async def cmd_tutorial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await cmd_help(update, context)
+
+
+async def cmd_rules(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await cmd_help(update, context)
 
 
 async def cmd_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -125,6 +146,51 @@ async def cmd_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         parse_mode=ParseMode.HTML,
         reply_markup=language_keyboard(),
     )
+
+
+async def _create_poker_room(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str
+) -> None:
+    """Actually create the room (shared by /poker and welcome skip)."""
+    if not update.effective_user or not update.effective_chat:
+        return
+    chat_id = update.effective_chat.id
+    user = update.effective_user
+
+    existing = _get_game(chat_id)
+    if existing and existing.state != GameState.FINISHED:
+        if update.callback_query:
+            await _answer_callback(
+                update, t(lang, "game_already_active"), show_alert=True
+            )
+        elif update.message:
+            await update.message.reply_text(t(lang, "game_already_active"))
+        return
+
+    game = PokerGame(
+        chat_id=chat_id,
+        host_id=user.id,
+        host_name=user.full_name or user.username or str(user.id),
+        lang=lang,
+    )
+    games[chat_id] = game
+
+    text = game.render_room(lang)
+    msg = await context.bot.send_message(
+        chat_id=chat_id,
+        text=text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=lobby_keyboard(lang),
+    )
+    game.message_id = msg.message_id
+
+    if update.callback_query:
+        try:
+            await update.callback_query.edit_message_reply_markup(
+                reply_markup=empty_keyboard()
+            )
+        except Exception:
+            pass
 
 
 async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -143,19 +209,16 @@ async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(t(lang, "game_already_active"))
         return
 
-    game = PokerGame(
-        chat_id=chat_id,
-        host_id=user.id,
-        host_name=user.full_name or user.username or str(user.id),
-        lang=lang,
-    )
-    games[chat_id] = game
+    # First-time welcome with tutorial option
+    if not has_seen_welcome(user.id):
+        await update.message.reply_text(
+            welcome_text(lang),
+            parse_mode=ParseMode.HTML,
+            reply_markup=welcome_keyboard(lang),
+        )
+        return
 
-    text = game.render_room(lang)
-    msg = await update.message.reply_text(
-        text, parse_mode=ParseMode.HTML, reply_markup=lobby_keyboard(lang)
-    )
-    game.message_id = msg.message_id
+    await _create_poker_room(update, context, lang)
 
 
 async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -319,9 +382,64 @@ async def callback_handler(
         set_lang(user.id, new_lang)
         key = "language_set_id" if new_lang == "id" else "language_set_en"
         await _answer_callback(update)
-        await query.edit_message_text(
-            t(new_lang, key), parse_mode=ParseMode.HTML
-        )
+        try:
+            await query.edit_message_text(
+                t(new_lang, key), parse_mode=ParseMode.HTML
+            )
+        except Exception:
+            pass
+        return
+
+    # ----- First-time welcome: Skip → create room -----
+    if data == "welcome:skip":
+        mark_welcome_seen(user.id)
+        await _answer_callback(update)
+        if not _is_group(update):
+            await _answer_callback(update, t(lang, "group_only"), show_alert=True)
+            return
+        await _create_poker_room(update, context, lang)
+        return
+
+    # ----- Tutorial navigation -----
+    if data.startswith("tut:"):
+        page = data.split(":", 1)[1]
+        await _answer_callback(update)
+        mark_welcome_seen(user.id)
+
+        if page == "lang":
+            try:
+                await query.edit_message_text(
+                    t(lang, "language_title"),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=language_keyboard(),
+                )
+            except Exception:
+                pass
+            return
+
+        if page == "menu":
+            try:
+                await query.edit_message_text(
+                    menu_text(lang),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=menu_keyboard(lang),
+                )
+            except Exception:
+                pass
+            return
+
+        if page in PAGE_ORDER:
+            try:
+                await query.edit_message_text(
+                    page_text(lang, page),
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=nav_keyboard(lang, page),
+                )
+            except Exception:
+                pass
+            return
+
+        await _answer_callback(update, t(lang, "unknown_button"))
         return
 
     # ----- Lobby actions -----
