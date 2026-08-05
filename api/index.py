@@ -25,11 +25,13 @@ from bot.handlers import (
     cmd_cancel,
     cmd_help,
     cmd_join,
+    cmd_language,
     cmd_leave,
     cmd_players,
     cmd_poker,
     cmd_start,
     cmd_startgame,
+    cmd_tutorial,
 )
 
 logging.basicConfig(
@@ -55,6 +57,8 @@ ptb = (
 # Register handlers
 ptb.add_handler(CommandHandler("start", cmd_start))
 ptb.add_handler(CommandHandler("help", cmd_help))
+ptb.add_handler(CommandHandler("tutorial", cmd_tutorial))
+ptb.add_handler(CommandHandler("language", cmd_language))
 ptb.add_handler(CommandHandler("poker", cmd_poker))
 ptb.add_handler(CommandHandler("join", cmd_join))
 ptb.add_handler(CommandHandler("leave", cmd_leave))
