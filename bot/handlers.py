@@ -1,4 +1,4 @@
-"""Command and callback handlers for the Poker bot."""
+"""Command and callback handlers for the Poker bot (i18n)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,13 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from game.poker import PokerGame, GameState, PlayerAction
-from bot.keyboards import lobby_keyboard, game_keyboard, empty_keyboard
+from bot.keyboards import (
+    lobby_keyboard,
+    game_keyboard,
+    language_keyboard,
+    empty_keyboard,
+)
+from locales import t, resolve_lang, set_lang
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +36,13 @@ def _get_game(chat_id: int) -> Optional[PokerGame]:
 def _is_group(update: Update) -> bool:
     chat = update.effective_chat
     return chat is not None and chat.type in ("group", "supergroup")
+
+
+def _lang(update: Update) -> str:
+    user = update.effective_user
+    if not user:
+        return "en"
+    return resolve_lang(user.id, user.language_code)
 
 
 async def _answer_callback(
@@ -59,7 +72,6 @@ async def _edit_or_reply(
                 reply_markup=reply_markup,
             )
             return message_id
-        # fallback – new message
         msg = await context.bot.send_message(
             chat_id=chat_id,
             text=text,
@@ -89,33 +101,38 @@ async def _edit_or_reply(
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
-    text = (
-        "🃏 <b>Telegram Poker Bot</b>\n\n"
-        "Play Texas Hold'em directly in your group!\n\n"
-        "Commands:\n"
-        "/poker – Create a new room\n"
-        "/join – Join current room\n"
-        "/leave – Leave room\n"
-        "/players – List players\n"
-        "/startgame – Start the game (host)\n"
-        "/cancel – Cancel room (host)\n"
-        "/help – Show this help\n\n"
-        "Add me to a group and type /poker to begin."
-    )
-    await update.message.reply_text(text, parse_mode=ParseMode.HTML)
+    lang = _lang(update)
+    await update.message.reply_text(t(lang, "start"), parse_mode=ParseMode.HTML)
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await cmd_start(update, context)
 
 
+async def cmd_tutorial(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    lang = _lang(update)
+    await update.message.reply_text(t(lang, "tutorial"), parse_mode=ParseMode.HTML)
+
+
+async def cmd_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+    lang = _lang(update)
+    await update.message.reply_text(
+        t(lang, "language_title"),
+        parse_mode=ParseMode.HTML,
+        reply_markup=language_keyboard(),
+    )
+
+
 async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.effective_user:
         return
+    lang = _lang(update)
     if not _is_group(update):
-        await update.message.reply_text(
-            "❌ This bot only works in groups. Add me to a group and try again."
-        )
+        await update.message.reply_text(t(lang, "group_only"))
         return
 
     chat_id = update.effective_chat.id  # type: ignore
@@ -123,22 +140,20 @@ async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     existing = _get_game(chat_id)
     if existing and existing.state != GameState.FINISHED:
-        await update.message.reply_text(
-            "⚠️ A game is already active in this group. "
-            "Finish or cancel it first."
-        )
+        await update.message.reply_text(t(lang, "game_already_active"))
         return
 
     game = PokerGame(
         chat_id=chat_id,
         host_id=user.id,
         host_name=user.full_name or user.username or str(user.id),
+        lang=lang,
     )
     games[chat_id] = game
 
-    text = game.render_room()
+    text = game.render_room(lang)
     msg = await update.message.reply_text(
-        text, parse_mode=ParseMode.HTML, reply_markup=lobby_keyboard()
+        text, parse_mode=ParseMode.HTML, reply_markup=lobby_keyboard(lang)
     )
     game.message_id = msg.message_id
 
@@ -146,71 +161,82 @@ async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.effective_user:
         return
+    lang = _lang(update)
     if not _is_group(update):
         return
     chat_id = update.effective_chat.id  # type: ignore
     user = update.effective_user
     game = _get_game(chat_id)
     if not game or game.state == GameState.FINISHED:
-        await update.message.reply_text("No active room. Use /poker first.")
+        await update.message.reply_text(t(lang, "no_active_room"))
         return
     result = game.add_player(
         user.id, user.full_name or user.username or str(user.id)
     )
-    if result != "ok":
-        await update.message.reply_text(f"⚠️ {result}")
+    if result == "ok":
+        await update.message.reply_text(
+            t(lang, "joined", player=user.full_name or user.username or str(user.id))
+        )
+        text = game.render_room(game.lang)
+        await _edit_or_reply(
+            update, context, text, lobby_keyboard(game.lang), game.message_id
+        )
         return
-    text = game.render_room()
-    await _edit_or_reply(
-        update, context, text, lobby_keyboard(), game.message_id
-    )
+    if result == "room_full":
+        await update.message.reply_text(
+            t(lang, "room_full", max=game.max_players)
+        )
+    else:
+        await update.message.reply_text(t(lang, result))
 
 
 async def cmd_leave(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.effective_user:
         return
+    lang = _lang(update)
     if not _is_group(update):
         return
     chat_id = update.effective_chat.id  # type: ignore
     user = update.effective_user
     game = _get_game(chat_id)
     if not game or game.state == GameState.FINISHED:
-        await update.message.reply_text("No active room.")
+        await update.message.reply_text(t(lang, "no_room"))
         return
     result = game.remove_player(user.id)
     if result == "host_left":
         games.pop(chat_id, None)
         await update.message.reply_text(
-            "🏠 Host left. Room cancelled.",
-            reply_markup=empty_keyboard(),
+            t(lang, "host_left"), reply_markup=empty_keyboard()
         )
         return
-    if result != "ok":
-        await update.message.reply_text(f"⚠️ {result}")
+    if result == "ok":
+        if game.player_count == 0:
+            games.pop(chat_id, None)
+            await update.message.reply_text(t(lang, "room_empty"))
+            return
+        await update.message.reply_text(t(lang, "left"))
+        text = game.render_room(game.lang)
+        await _edit_or_reply(
+            update, context, text, lobby_keyboard(game.lang), game.message_id
+        )
         return
-    if game.player_count == 0:
-        games.pop(chat_id, None)
-        await update.message.reply_text("Room empty – closed.")
-        return
-    text = game.render_room()
-    await _edit_or_reply(
-        update, context, text, lobby_keyboard(), game.message_id
-    )
+    await update.message.reply_text(t(lang, result))
 
 
 async def cmd_players(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message:
         return
+    lang = _lang(update)
     if not _is_group(update):
         return
     chat_id = update.effective_chat.id  # type: ignore
     game = _get_game(chat_id)
     if not game or game.state == GameState.FINISHED:
-        await update.message.reply_text("No active room.")
+        await update.message.reply_text(t(lang, "no_room"))
         return
     names = "\n".join(f"👤 {p.name}" for p in game.player_list)
     await update.message.reply_text(
-        f"<b>Players ({game.player_count})</b>\n{names}",
+        t(lang, "players_list", count=game.player_count, names=names),
         parse_mode=ParseMode.HTML,
     )
 
@@ -220,27 +246,28 @@ async def cmd_startgame(
 ) -> None:
     if not update.message or not update.effective_user:
         return
+    lang = _lang(update)
     if not _is_group(update):
         return
     chat_id = update.effective_chat.id  # type: ignore
     user = update.effective_user
     game = _get_game(chat_id)
     if not game or game.state == GameState.FINISHED:
-        await update.message.reply_text("No active room. Use /poker first.")
+        await update.message.reply_text(t(lang, "no_active_room"))
         return
     if user.id != game.host_id:
-        await update.message.reply_text("Only the host can start the game.")
+        await update.message.reply_text(t(lang, "only_host_start"))
         return
     if not game.can_start():
         await update.message.reply_text(
-            f"Need at least {game.min_players} players "
-            f"(currently {game.player_count})."
+            t(lang, "need_players", min=game.min_players, count=game.player_count)
         )
         return
     game.start()
-    text = game.render_game()
+    await update.message.reply_text(t(lang, "game_started"))
+    text = game.render_game(game.lang)
     mid = await _edit_or_reply(
-        update, context, text, game_keyboard(), game.message_id
+        update, context, text, game_keyboard(game.lang), game.message_id
     )
     if mid:
         game.message_id = mid
@@ -249,20 +276,21 @@ async def cmd_startgame(
 async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.effective_user:
         return
+    lang = _lang(update)
     if not _is_group(update):
         return
     chat_id = update.effective_chat.id  # type: ignore
     user = update.effective_user
     game = _get_game(chat_id)
     if not game or game.state == GameState.FINISHED:
-        await update.message.reply_text("No active room.")
+        await update.message.reply_text(t(lang, "no_room"))
         return
     if user.id != game.host_id:
-        await update.message.reply_text("Only the host can cancel.")
+        await update.message.reply_text(t(lang, "only_host_cancel"))
         return
     games.pop(chat_id, None)
     await update.message.reply_text(
-        "❌ Room cancelled.", reply_markup=empty_keyboard()
+        t(lang, "room_cancelled"), reply_markup=empty_keyboard()
     )
 
 
@@ -280,93 +308,113 @@ async def callback_handler(
     data = query.data or ""
     chat_id = update.effective_chat.id
     user = update.effective_user
+    lang = _lang(update)
     game = _get_game(chat_id)
+
+    # ----- Language selection -----
+    if data.startswith("lang:"):
+        new_lang = data.split(":", 1)[1]
+        if new_lang not in ("id", "en"):
+            new_lang = "en"
+        set_lang(user.id, new_lang)
+        key = "language_set_id" if new_lang == "id" else "language_set_en"
+        await _answer_callback(update)
+        await query.edit_message_text(
+            t(new_lang, key), parse_mode=ParseMode.HTML
+        )
+        return
 
     # ----- Lobby actions -----
     if data == "join":
         if not game or game.state != GameState.WAITING:
-            await _answer_callback(update, "No open room.", show_alert=True)
+            await _answer_callback(update, t(lang, "no_open_room"), show_alert=True)
             return
         result = game.add_player(
             user.id, user.full_name or user.username or str(user.id)
         )
         if result != "ok":
-            await _answer_callback(update, result, show_alert=True)
+            if result == "room_full":
+                msg = t(lang, "room_full", max=game.max_players)
+            else:
+                msg = t(lang, result)
+            await _answer_callback(update, msg, show_alert=True)
             return
-        await _answer_callback(update, "Joined!")
-        text = game.render_room()
+        await _answer_callback(update, t(lang, "joined_short"))
+        text = game.render_room(game.lang)
         await _edit_or_reply(
-            update, context, text, lobby_keyboard(), game.message_id
+            update, context, text, lobby_keyboard(game.lang), game.message_id
         )
         return
 
     if data == "leave":
         if not game or game.state != GameState.WAITING:
-            await _answer_callback(update, "No open room.", show_alert=True)
+            await _answer_callback(update, t(lang, "no_open_room"), show_alert=True)
             return
         result = game.remove_player(user.id)
         if result == "host_left":
             games.pop(chat_id, None)
-            await _answer_callback(update, "Host left – room closed.")
+            await _answer_callback(update, t(lang, "host_left"))
             await _edit_or_reply(
                 update,
                 context,
-                "🏠 Host left. Room cancelled.",
+                t(lang, "host_left"),
                 empty_keyboard(),
                 game.message_id,
             )
             return
         if result != "ok":
-            await _answer_callback(update, result, show_alert=True)
+            await _answer_callback(update, t(lang, result), show_alert=True)
             return
-        await _answer_callback(update, "Left.")
+        await _answer_callback(update, t(lang, "left_short"))
         if game.player_count == 0:
             games.pop(chat_id, None)
             await _edit_or_reply(
                 update,
                 context,
-                "Room empty – closed.",
+                t(lang, "room_empty"),
                 empty_keyboard(),
                 game.message_id,
             )
             return
-        text = game.render_room()
+        text = game.render_room(game.lang)
         await _edit_or_reply(
-            update, context, text, lobby_keyboard(), game.message_id
+            update, context, text, lobby_keyboard(game.lang), game.message_id
         )
         return
 
     if data == "players":
         if not game:
-            await _answer_callback(update, "No room.", show_alert=True)
+            await _answer_callback(update, t(lang, "no_room"), show_alert=True)
             return
         names = ", ".join(p.name for p in game.player_list) or "–"
         await _answer_callback(
-            update, f"Players ({game.player_count}): {names}", show_alert=True
+            update,
+            t(lang, "players_popup", count=game.player_count, names=names),
+            show_alert=True,
         )
         return
 
     if data == "startgame":
         if not game or game.state != GameState.WAITING:
-            await _answer_callback(update, "No open room.", show_alert=True)
+            await _answer_callback(update, t(lang, "no_open_room"), show_alert=True)
             return
         if user.id != game.host_id:
             await _answer_callback(
-                update, "Only host can start.", show_alert=True
+                update, t(lang, "only_host_short"), show_alert=True
             )
             return
         if not game.can_start():
             await _answer_callback(
                 update,
-                f"Need ≥{game.min_players} players.",
+                t(lang, "need_players_short", min=game.min_players),
                 show_alert=True,
             )
             return
         game.start()
-        await _answer_callback(update, "Game started!")
-        text = game.render_game()
+        await _answer_callback(update, t(lang, "started_short"))
+        text = game.render_game(game.lang)
         mid = await _edit_or_reply(
-            update, context, text, game_keyboard(), game.message_id
+            update, context, text, game_keyboard(game.lang), game.message_id
         )
         if mid:
             game.message_id = mid
@@ -374,19 +422,19 @@ async def callback_handler(
 
     if data == "cancel":
         if not game:
-            await _answer_callback(update, "No room.", show_alert=True)
+            await _answer_callback(update, t(lang, "no_room"), show_alert=True)
             return
         if user.id != game.host_id:
             await _answer_callback(
-                update, "Only host can cancel.", show_alert=True
+                update, t(lang, "only_host_cancel_short"), show_alert=True
             )
             return
         games.pop(chat_id, None)
-        await _answer_callback(update, "Cancelled.")
+        await _answer_callback(update, t(lang, "cancelled_short"))
         await _edit_or_reply(
             update,
             context,
-            "❌ Room cancelled.",
+            t(lang, "room_cancelled"),
             empty_keyboard(),
             game.message_id if game else None,
         )
@@ -399,14 +447,16 @@ async def callback_handler(
             GameState.SHOWDOWN,
             GameState.FINISHED,
         ):
-            await _answer_callback(update, "No active game.", show_alert=True)
+            await _answer_callback(
+                update, t(lang, "no_active_game"), show_alert=True
+            )
             return
 
-        # Timeout check before accepting action
         if time.time() > game.turn_deadline:
             auto = game.auto_action_on_timeout()
+            action_name = auto.value if auto else "?"
             await _answer_callback(
-                update, f"Time expired – auto {auto.value if auto else '?'}"
+                update, t(lang, "time_expired", action=action_name)
             )
             await _refresh_game_view(update, context, game)
             return
@@ -415,49 +465,48 @@ async def callback_handler(
         try:
             action = PlayerAction(action_str)
         except ValueError:
-            await _answer_callback(update, "Invalid action.", show_alert=True)
+            await _answer_callback(
+                update, t(lang, "invalid_action"), show_alert=True
+            )
             return
 
         result = game.apply_action(user.id, action)
-        if result == "not_your_turn":
-            await _answer_callback(update, "Bukan giliranmu.", show_alert=True)
-            return
         if result != "ok":
-            await _answer_callback(update, result, show_alert=True)
+            await _answer_callback(update, t(lang, result), show_alert=True)
             return
 
-        await _answer_callback(update, f"{action.value.title()}!")
+        await _answer_callback(
+            update, t(lang, "action_ok", action=action.value.title())
+        )
         await _refresh_game_view(update, context, game)
         return
 
-    await _answer_callback(update, "Unknown button.")
+    await _answer_callback(update, t(lang, "unknown_button"))
 
 
 async def _refresh_game_view(
     update: Update, context: ContextTypes.DEFAULT_TYPE, game: PokerGame
 ) -> None:
     """Update main message after an action / street change / showdown."""
+    lang = game.lang
     if game.state == GameState.SHOWDOWN:
-        text = game.render_showdown()
+        text = game.render_showdown(lang)
         mid = await _edit_or_reply(
             update, context, text, empty_keyboard(), game.message_id
         )
         if mid:
             game.message_id = mid
-        # Clean up after showdown
         game.finish()
         games.pop(game.chat_id, None)
         return
 
-    # Still playing
-    text = game.render_game()
+    text = game.render_game(lang)
     mid = await _edit_or_reply(
-        update, context, text, game_keyboard(), game.message_id
+        update, context, text, game_keyboard(lang), game.message_id
     )
     if mid:
         game.message_id = mid
 
-    # Auto-win if only one left
     if len(game.active_players) <= 1 and game.state not in (
         GameState.SHOWDOWN,
         GameState.FINISHED,
