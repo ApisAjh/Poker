@@ -294,26 +294,6 @@ TEXTS = {
         "<b>Q: How many players per room?</b>\n"
         "A: Minimum 2, maximum 6."
     ),
-
-    # ----- timeouts -----
-    "room_timeout": (
-        "⏰ <b>Room closed.</b>\n\n"
-        "Not enough players to start within 10 minutes.\n"
-        "Use /poker to create a new room."
-    ),
-    "afk_warning": (
-        "⚠️ <b>5 minutes left!</b>\n\n"
-        "👤 {player}\n"
-        "Take an action before the bot auto-Folds."
-    ),
-    "afk_fold": (
-        "⏰ <b>Time's up!</b>\n\n"
-        "👤 {player}\n"
-        "marked AFK.\n"
-        "Bot auto-Folded. Turn passes to the next player."
-    ),
-
-
     # ----- game modes -----
     "mode_select_title": "🎮 <b>Choose Game Mode</b>\n\nPick how you want to play this room.",
     "mode_classic": "♠ Poker Classic",
