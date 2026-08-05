@@ -63,6 +63,7 @@ TEXTS = {
     "game_title": "🃏 <b>Texas Hold'em</b>",
     "label_players": "<b>Players</b>",
     "label_community": "<b>Community Cards</b>",
+    "label_turn_notimer": "<b>Current Turn</b>\n👤 {name}",
     "label_turn": "<b>Current Turn</b>\n👤 {name} ({seconds}s)",
     "label_street": "<b>Street</b>: {street}",
     "folded": "❌ Folded",
@@ -293,4 +294,68 @@ TEXTS = {
         "<b>Q: How many players per room?</b>\n"
         "A: Minimum 2, maximum 6."
     ),
+
+    # ----- timeouts -----
+    "room_timeout": (
+        "⏰ <b>Room closed.</b>\n\n"
+        "Not enough players to start within 10 minutes.\n"
+        "Use /poker to create a new room."
+    ),
+    "afk_warning": (
+        "⚠️ <b>5 minutes left!</b>\n\n"
+        "👤 {player}\n"
+        "Take an action before the bot auto-Folds."
+    ),
+    "afk_fold": (
+        "⏰ <b>Time's up!</b>\n\n"
+        "👤 {player}\n"
+        "marked AFK.\n"
+        "Bot auto-Folded. Turn passes to the next player."
+    ),
+
+
+    # ----- game modes -----
+    "mode_select_title": "🎮 <b>Choose Game Mode</b>\n\nPick how you want to play this room.",
+    "mode_classic": "♠ Poker Classic",
+    "mode_private": "🃏 Poker Private",
+    "mode_classic_desc": "All actions in the group. Fast & simple.",
+    "mode_private_desc": "Hole cards only via Inline Mode. Real poker privacy.",
+    "btn_open_hand": "🎴 Open Hand",
+    "private_turn_hint": "👉 {player} — press the button below to open your hand.",
+    "inline_not_in_game": "❌ You are not in an active game.",
+    "inline_game_over": "❌ The game has ended.",
+    "inline_not_your_turn": "❌ Not your turn.",
+    "inline_title_cards": "{cards}  ·  your hole cards",
+    "inline_desc_check": "Check – pass without betting",
+    "inline_desc_call": "Call – match the bet",
+    "inline_desc_raise": "Raise – increase the bet",
+    "inline_desc_fold": "Fold – leave this round",
+    "inline_action_posted": "👤 {player}\n{action}",
+    "private_help_inline": "Type @{bot} in this chat to open your cards.",
+
+
+    "tut_btn_modes": "🎮 Game Modes",
+    "tut_modes": (
+        "🎮 <b>Game Modes</b>\n\n"
+        "This bot has two ways to play.\n\n"
+        "━━━━━━━━━━━━\n"
+        "♠ <b>Poker Classic</b>\n\n"
+        "Simple mode.\n"
+        "Everything happens in the group.\n"
+        "On your turn the bot shows action buttons:\n"
+        "✅ Check  📞 Call  ⬆ Raise  ❌ Fold\n\n"
+        "Hole cards stay hidden (🂠🂠) until showdown.\n"
+        "Best for quick games.\n"
+        "━━━━━━━━━━━━\n"
+        "🃏 <b>Poker Private</b>\n\n"
+        "Inspired by UNO Telegram bots.\n"
+        "Play still happens in the group, but your\n"
+        "2 hole cards are private.\n\n"
+        "On your turn press:\n"
+        "🎴 <b>Open Hand</b>\n\n"
+        "Telegram Inline Mode shows <b>only your</b> cards.\n"
+        "Pick Check / Call / Raise / Fold there.\n"
+        "The group only sees your action, never your cards.\n\n"
+        "Feels like real poker privacy."
+    )
 }
