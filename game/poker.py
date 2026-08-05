@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Set
 
 from .cards import Card, Deck
 from .evaluator import HandRank, HandScore, compare_hands, evaluate_hand
+from .modes import GameMode
 
 
 class GameState(Enum):
@@ -32,6 +33,7 @@ class PlayerAction(Enum):
 class Player:
     user_id: int
     name: str
+    username: Optional[str] = None  # Telegram @username (no @)
     hole_cards: List[Card] = field(default_factory=list)
     folded: bool = False
     is_all_in: bool = False  # kept for future extension, not used with chips
@@ -40,6 +42,13 @@ class Player:
     @property
     def is_active(self) -> bool:
         return not self.folded
+
+    @property
+    def mention(self) -> str:
+        """Display name with @username when available."""
+        if self.username:
+            return f"{self.name} (@{self.username})"
+        return self.name
 
 
 @dataclass
@@ -54,6 +63,7 @@ class PokerGame:
     host_id: int
     host_name: str
     lang: str = "en"  # display language for shared room/game messages
+    mode: Optional[GameMode] = None  # chosen when room is created
     players: Dict[int, Player] = field(default_factory=dict)
     state: GameState = GameState.WAITING
     deck: Optional[Deck] = None
@@ -64,7 +74,7 @@ class PokerGame:
     raised_this_street: bool = False
     turn_deadline: float = 0.0  # unix timestamp
     message_id: Optional[int] = None  # main status message to edit
-    turn_seconds: int = 20
+    turn_seconds: int = 60
     min_players: int = 2
     max_players: int = 6
 
@@ -72,7 +82,7 @@ class PokerGame:
         if self.host_id not in self.players:
             self.players[self.host_id] = Player(
                 user_id=self.host_id, name=self.host_name
-            )
+            )  # username set later if provided
 
     # ------------------------------------------------------------------
     # Lobby helpers
@@ -90,14 +100,14 @@ class PokerGame:
     def player_count(self) -> int:
         return len(self.players)
 
-    def add_player(self, user_id: int, name: str) -> str:
+    def add_player(self, user_id: int, name: str, username: Optional[str] = None) -> str:
         if self.state != GameState.WAITING:
             return "game_started_already"
         if user_id in self.players:
             return "already_joined"
         if self.player_count >= self.max_players:
             return "room_full"
-        self.players[user_id] = Player(user_id=user_id, name=name)
+        self.players[user_id] = Player(user_id=user_id, name=name, username=username)
         return "ok"
 
     def remove_player(self, user_id: int) -> str:
@@ -145,8 +155,15 @@ class PokerGame:
         for p in self.player_list:
             p.last_action = None
 
+    def uses_turn_timer(self) -> bool:
+        """Soft turn timer only for Classic mode."""
+        return self.mode is None or self.mode.value == "classic"
+
     def _set_turn_deadline(self) -> None:
-        self.turn_deadline = time.time() + self.turn_seconds
+        if self.uses_turn_timer():
+            self.turn_deadline = time.time() + self.turn_seconds
+        else:
+            self.turn_deadline = 0.0  # no soft timer (Private)
 
     def _ordered_ids(self) -> List[int]:
         """Stable seat order (insertion order of dict)."""
@@ -308,7 +325,7 @@ class PokerGame:
             lines.append("")
             lines.append(t(lang, "room_players"))
             for p in self.player_list:
-                lines.append(f"👤 {p.name}")
+                lines.append(f"👤 {p.mention}")
             lines.append("")
             if self.player_count < self.min_players:
                 lines.append(
@@ -338,7 +355,7 @@ class PokerGame:
         for p in self.player_list:
             cards = "🂠🂠" if not p.folded else t(lang, "folded")
             marker = " ⬅️" if self.is_player_turn(p.user_id) else ""
-            lines.append(f"👤 {p.name}   {cards}{marker}")
+            lines.append(f"👤 {p.mention}   {cards}{marker}")
         lines.append("")
         lines.append(t(lang, "label_community"))
         if not self.community:
@@ -350,14 +367,30 @@ class PokerGame:
         lines.append("")
         cur = self.current_player()
         if cur and self.state not in (GameState.SHOWDOWN, GameState.FINISHED):
-            remaining = max(0, int(self.turn_deadline - time.time()))
-            lines.append(
-                t(lang, "label_turn", name=cur.name, seconds=remaining)
-            )
+            if self.uses_turn_timer():
+                remaining = max(0, int(self.turn_deadline - time.time()))
+                lines.append(
+                    t(lang, "label_turn", name=cur.mention, seconds=remaining)
+                )
+            else:
+                lines.append(
+                    t(lang, "label_turn_notimer", name=cur.mention)
+                )
         lines.append("")
         lines.append(
             t(lang, "label_street", street=t(lang, self._street_key()))
         )
+        if self.mode and self.mode.value == "private":
+            lines.append("")
+            if cur:
+                lines.append(
+                    t(lang, "private_turn_hint", player=cur.mention)
+                )
+            else:
+                lines.append(t(lang, "private_turn_hint", player="–"))
+        if self.mode:
+            lines.append("")
+            lines.append(t(lang, self.mode.label_key))
         return "\n".join(lines)
 
     def render_showdown(self, lang: str = "en") -> str:
