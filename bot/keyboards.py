@@ -1,8 +1,9 @@
-"""Inline keyboards for lobby and in-game actions (i18n)."""
+"""Inline keyboards for lobby, modes, and in-game actions (i18n)."""
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from locales import t
+from game.modes import GameMode
 
 
 def lobby_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
@@ -23,7 +24,44 @@ def lobby_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
     )
 
 
-def game_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+def mode_keyboard(lang: str = "en") -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    t(lang, "mode_classic"), callback_data="mode:classic"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    t(lang, "mode_private"), callback_data="mode:private"
+                ),
+            ],
+        ]
+    )
+
+
+def game_keyboard(
+    lang: str = "en",
+    mode: GameMode | None = None,
+    chat_id: int = 0,
+    turn_label: str = "",
+) -> InlineKeyboardMarkup:
+    """Classic: action buttons. Private: Open Hand (switch inline)."""
+    if mode == GameMode.PRIVATE:
+        btn_text = t(lang, "btn_open_hand")
+        if turn_label:
+            btn_text = f"{btn_text} · {turn_label}"
+        return InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        btn_text,
+                        switch_inline_query_current_chat=f"hand {chat_id}",
+                    ),
+                ],
+            ]
+        )
     return InlineKeyboardMarkup(
         [
             [

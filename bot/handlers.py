@@ -11,11 +11,13 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from game.poker import PokerGame, GameState, PlayerAction
+from game.modes import GameMode
 from bot.keyboards import (
     lobby_keyboard,
     game_keyboard,
     language_keyboard,
     empty_keyboard,
+    mode_keyboard,
 )
 from bot.tutorial import (
     PAGE_ORDER,
@@ -29,7 +31,6 @@ from bot.tutorial import (
     welcome_text,
 )
 from locales import t, resolve_lang, set_lang
-
 logger = logging.getLogger(__name__)
 
 # In-memory store – one game per chat_id
@@ -148,8 +149,32 @@ async def cmd_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 
-async def _create_poker_room(
+
+async def _show_mode_select(
     update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str
+) -> None:
+    """Ask host to pick Classic or Private before creating the room."""
+    text = t(lang, "mode_select_title")
+    if update.message:
+        await update.message.reply_text(
+            text, parse_mode=ParseMode.HTML, reply_markup=mode_keyboard(lang)
+        )
+    elif update.callback_query:
+        try:
+            await update.callback_query.edit_message_text(
+                text, parse_mode=ParseMode.HTML, reply_markup=mode_keyboard(lang)
+            )
+        except Exception:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,  # type: ignore
+                text=text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=mode_keyboard(lang),
+            )
+
+
+async def _create_poker_room(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str, mode: GameMode
 ) -> None:
     """Actually create the room (shared by /poker and welcome skip)."""
     if not update.effective_user or not update.effective_chat:
@@ -172,7 +197,10 @@ async def _create_poker_room(
         host_id=user.id,
         host_name=user.full_name or user.username or str(user.id),
         lang=lang,
+        mode=mode,
     )
+    if user.username and game.host_id in game.players:
+        game.players[game.host_id].username = user.username
     games[chat_id] = game
 
     text = game.render_room(lang)
@@ -183,6 +211,7 @@ async def _create_poker_room(
         reply_markup=lobby_keyboard(lang),
     )
     game.message_id = msg.message_id
+
 
     if update.callback_query:
         try:
@@ -218,7 +247,7 @@ async def cmd_poker(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         return
 
-    await _create_poker_room(update, context, lang)
+    await _show_mode_select(update, context, lang)
 
 
 async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -234,7 +263,7 @@ async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text(t(lang, "no_active_room"))
         return
     result = game.add_player(
-        user.id, user.full_name or user.username or str(user.id)
+        user.id, user.full_name or user.username or str(user.id), user.username
     )
     if result == "ok":
         await update.message.reply_text(
@@ -330,7 +359,7 @@ async def cmd_startgame(
     await update.message.reply_text(t(lang, "game_started"))
     text = game.render_game(game.lang)
     mid = await _edit_or_reply(
-        update, context, text, game_keyboard(game.lang), game.message_id
+        update, context, text, game_keyboard(game.lang, game.mode, game.chat_id, (game.current_player().mention if game.current_player() else '')), game.message_id
     )
     if mid:
         game.message_id = mid
@@ -390,6 +419,22 @@ async def callback_handler(
             pass
         return
 
+
+    # ----- Mode selection -----
+    if data.startswith("mode:"):
+        mode_str = data.split(":", 1)[1]
+        if mode_str not in ("classic", "private"):
+            await _answer_callback(update, t(lang, "unknown_button"))
+            return
+        mode = GameMode.CLASSIC if mode_str == "classic" else GameMode.PRIVATE
+        mark_welcome_seen(user.id)
+        await _answer_callback(update)
+        if not _is_group(update):
+            await _answer_callback(update, t(lang, "group_only"), show_alert=True)
+            return
+        await _create_poker_room(update, context, lang, mode)
+        return
+
     # ----- First-time welcome: Skip → create room -----
     if data == "welcome:skip":
         mark_welcome_seen(user.id)
@@ -397,7 +442,19 @@ async def callback_handler(
         if not _is_group(update):
             await _answer_callback(update, t(lang, "group_only"), show_alert=True)
             return
-        await _create_poker_room(update, context, lang)
+        try:
+            await query.edit_message_text(
+                t(lang, "mode_select_title"),
+                parse_mode=ParseMode.HTML,
+                reply_markup=mode_keyboard(lang),
+            )
+        except Exception:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=t(lang, "mode_select_title"),
+                parse_mode=ParseMode.HTML,
+                reply_markup=mode_keyboard(lang),
+            )
         return
 
     # ----- Tutorial navigation -----
@@ -448,7 +505,7 @@ async def callback_handler(
             await _answer_callback(update, t(lang, "no_open_room"), show_alert=True)
             return
         result = game.add_player(
-            user.id, user.full_name or user.username or str(user.id)
+            user.id, user.full_name or user.username or str(user.id), user.username
         )
         if result != "ok":
             if result == "room_full":
@@ -528,15 +585,15 @@ async def callback_handler(
                 show_alert=True,
             )
             return
-        game.start()
+            game.start()
         await _answer_callback(update, t(lang, "started_short"))
         text = game.render_game(game.lang)
         mid = await _edit_or_reply(
-            update, context, text, game_keyboard(game.lang), game.message_id
+            update, context, text, game_keyboard(game.lang, game.mode, game.chat_id, (game.current_player().mention if game.current_player() else '')), game.message_id
         )
         if mid:
             game.message_id = mid
-        return
+            return
 
     if data == "cancel":
         if not game:
@@ -547,7 +604,7 @@ async def callback_handler(
                 update, t(lang, "only_host_cancel_short"), show_alert=True
             )
             return
-        games.pop(chat_id, None)
+            games.pop(chat_id, None)
         await _answer_callback(update, t(lang, "cancelled_short"))
         await _edit_or_reply(
             update,
@@ -570,7 +627,7 @@ async def callback_handler(
             )
             return
 
-        if time.time() > game.turn_deadline:
+        if game.uses_turn_timer() and game.turn_deadline and time.time() > game.turn_deadline:
             auto = game.auto_action_on_timeout()
             action_name = auto.value if auto else "?"
             await _answer_callback(
@@ -602,6 +659,45 @@ async def callback_handler(
     await _answer_callback(update, t(lang, "unknown_button"))
 
 
+# ------------------------------------------------------------------
+
+async def _refresh_game_view_bot(bot, game: PokerGame) -> None:
+    """Refresh board using Bot only (used by private-mode inline actions)."""
+    lang = game.lang
+    chat_id = game.chat_id
+    try:
+        if game.state == GameState.SHOWDOWN:
+            text = game.render_showdown(lang)
+            if game.message_id:
+                await bot.edit_message_text(
+                    chat_id=chat_id,
+                    message_id=game.message_id,
+                    text=text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=empty_keyboard(),
+                )
+            game.finish()
+            games.pop(chat_id, None)
+            return
+
+        if len(game.active_players) <= 1:
+            game._go_to_showdown()
+            await _refresh_game_view_bot(bot, game)
+            return
+
+        text = game.render_game(lang)
+        if game.message_id:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=game.message_id,
+                text=text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=game_keyboard(lang, game.mode, game.chat_id, (game.current_player().mention if game.current_player() else '')),
+            )
+    except Exception:
+        logger.exception("refresh bot view failed chat=%s", chat_id)
+
+
 async def _refresh_game_view(
     update: Update, context: ContextTypes.DEFAULT_TYPE, game: PokerGame
 ) -> None:
@@ -614,13 +710,13 @@ async def _refresh_game_view(
         )
         if mid:
             game.message_id = mid
-        game.finish()
+            game.finish()
         games.pop(game.chat_id, None)
         return
 
     text = game.render_game(lang)
     mid = await _edit_or_reply(
-        update, context, text, game_keyboard(lang), game.message_id
+        update, context, text, game_keyboard(lang, game.mode, game.chat_id, (game.current_player().mention if game.current_player() else '')), game.message_id
     )
     if mid:
         game.message_id = mid
@@ -631,3 +727,5 @@ async def _refresh_game_view(
     ):
         game._go_to_showdown()
         await _refresh_game_view(update, context, game)
+        return
+
