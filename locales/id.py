@@ -294,26 +294,6 @@ TEXTS = {
         "<b>Q: Berapa pemain per room?</b>\n"
         "A: Minimal 2, maksimal 6."
     ),
-
-    # ----- timeouts -----
-    "room_timeout": (
-        "⏰ <b>Room telah ditutup.</b>\n\n"
-        "Tidak ada cukup pemain untuk memulai permainan dalam 10 menit.\n"
-        "Silakan gunakan /poker untuk membuat room baru."
-    ),
-    "afk_warning": (
-        "⚠️ <b>Sisa waktu 5 menit!</b>\n\n"
-        "👤 {player}\n"
-        "Segera lakukan aksi sebelum bot otomatis melakukan Fold."
-    ),
-    "afk_fold": (
-        "⏰ <b>Waktu habis!</b>\n\n"
-        "👤 {player}\n"
-        "dianggap AFK.\n"
-        "Bot otomatis melakukan Fold. Giliran berpindah ke pemain berikutnya."
-    ),
-
-
     # ----- game modes -----
     "mode_select_title": "🎮 <b>Pilih Mode Permainan</b>\n\nPilih cara bermain untuk room ini.",
     "mode_classic": "♠ Poker Classic",
