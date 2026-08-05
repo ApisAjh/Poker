@@ -116,35 +116,181 @@ TEXTS = {
     "street_showdown": "Showdown",
     "street_finished": "Selesai",
 
-    # ----- tutorial -----
-    "tutorial": (
-        "📖 <b>Cara Bermain</b>\n\n"
-        "Tujuan permainan adalah membuat kombinasi kartu terbaik.\n\n"
-        "Setiap pemain mendapat:\n"
-        "• 2 kartu pribadi (Hole Cards)\n\n"
-        "Gabungkan dengan:\n"
-        "• 5 Community Cards\n\n"
-        "<b>Tahapan Permainan</b>\n"
-        "1. Pre-Flop\n"
-        "2. Flop\n"
-        "3. Turn\n"
-        "4. River\n"
-        "5. Showdown\n\n"
-        "<b>Arti Tombol</b>\n"
-        "✅ <b>Check</b> – Tidak menambah taruhan.\n"
-        "📞 <b>Call</b> – Mengikuti taruhan.\n"
-        "⬆ <b>Raise</b> – Menambah taruhan.\n"
-        "❌ <b>Fold</b> – Menyerah.\n\n"
-        "<b>Ranking</b> (terkuat → terlemah)\n"
-        "Royal Flush\n"
-        "Straight Flush\n"
-        "Four of a Kind\n"
-        "Full House\n"
-        "Flush\n"
-        "Straight\n"
-        "Three of a Kind\n"
-        "Two Pair\n"
-        "Pair\n"
-        "High Card"
+    # ----- help / start extras -----
+    "help_menu_hint": "\n\n📚 Ketik /tutorial untuk panduan interaktif lengkap.",
+
+    # ----- first-time welcome -----
+    "welcome_first": (
+        "👋 <b>Selamat Datang di Texas Hold'em!</b>\n\n"
+        "Apakah ini pertama kalinya kamu bermain?\n\n"
+        "Kami sarankan baca panduan singkat dulu."
+    ),
+    "welcome_btn_tutorial": "📖 Tutorial",
+    "welcome_btn_skip": "▶ Lewati",
+
+    # ----- tutorial menu & nav -----
+    "tut_menu": (
+        "📚 <b>Panduan Poker</b>\n\n"
+        "Pilih topik yang ingin dipelajari.\n"
+        "Cocok untuk yang belum pernah main Texas Hold'em."
+    ),
+    "tut_btn_basics": "📖 Dasar Poker",
+    "tut_btn_flow": "🎮 Cara Bermain",
+    "tut_btn_examples": "🃏 Contoh Permainan",
+    "tut_btn_ranking": "🎴 Ranking Kartu",
+    "tut_btn_buttons": "🎯 Arti Tombol",
+    "tut_btn_tips": "💡 Tips Bermain",
+    "tut_btn_faq": "❓ FAQ",
+    "tut_btn_lang": "🌐 Ganti Bahasa",
+    "tut_btn_prev": "⬅ Sebelumnya",
+    "tut_btn_home": "🏠 Beranda",
+    "tut_btn_next": "➡ Berikutnya",
+
+    # ----- tutorial pages -----
+    "tut_basics": (
+        "📖 <b>Apa Itu Texas Hold'em?</b>\n\n"
+        "Texas Hold'em adalah permainan kartu.\n\n"
+        "Setiap pemain memperoleh:\n"
+        "🃏 <b>2 kartu pribadi</b> (Hole Cards)\n"
+        "Hanya kamu yang bisa melihatnya.\n\n"
+        "Kemudian bot membuka:\n"
+        "🂠🂠🂠🂠🂠\n"
+        "<b>5 Community Cards</b>\n"
+        "Dipakai bersama semua pemain.\n\n"
+        "Tujuan: buat <b>kombinasi 5 kartu terbaik</b> "
+        "dari 2 kartu pribadi + 5 community "
+        "(total 7 kartu, pilih 5 terbaik)."
+    ),
+    "tut_flow": (
+        "🎮 <b>Alur Permainan</b>\n\n"
+        "🎮 Buat Room  (/poker)\n"
+        "↓\n"
+        "👥 Pemain Join\n"
+        "↓\n"
+        "▶ Host Memulai Game\n"
+        "↓\n"
+        "🃏 Semua pemain mendapat 2 kartu\n"
+        "<i>Pre-Flop – putuskan Check / Raise / Fold</i>\n"
+        "↓\n"
+        "🃏 <b>Flop</b> – 3 community cards terbuka\n"
+        "↓\n"
+        "🃏 <b>Turn</b> – kartu community ke-4\n"
+        "↓\n"
+        "🃏 <b>River</b> – kartu community ke-5\n"
+        "↓\n"
+        "🏁 <b>Showdown</b> – semua kartu dibuka\n"
+        "↓\n"
+        "🏆 <b>Pemenang</b>\n\n"
+        "Di setiap tahap, pemain bergiliran menekan tombol aksi."
+    ),
+    "tut_examples": (
+        "🃏 <b>Contoh Permainan</b>\n\n"
+        "<b>Contoh 1</b>\n"
+        "Community: 2♦ 7♣ J♠ 5♥ K♣\n"
+        "Kartu kamu: J♦ 4♠\n"
+        "Hasil: ✅ <b>Pair</b> (dua Jack)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Contoh 2</b>\n"
+        "Community: 8♣ 9♦ 10♠ J♣ 2♥\n"
+        "Kartu kamu: Q♦ K♦\n"
+        "Hasil: ✅ <b>Straight</b> (8-9-10-J-Q)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Contoh 3</b>\n"
+        "Community: A♥ A♣ 7♠ 3♦ 2♣\n"
+        "Kartu kamu: A♦ K♠\n"
+        "Hasil: ✅ <b>Three of a Kind</b> (tiga Ace)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Contoh 4</b>\n"
+        "Community: K♥ 9♥ 2♥ 5♣ 8♦\n"
+        "Kartu kamu: A♥ 3♥\n"
+        "Hasil: ✅ <b>Flush</b> (lima hati)"
+    ),
+    "tut_buttons": (
+        "🎯 <b>Arti Tombol</b>\n\n"
+        "✅ <b>Check</b>\n"
+        "Lewati giliran tanpa menambah taruhan.\n"
+        "Pakai jika belum ada yang raise dan kamu ingin tetap murah.\n"
+        "━━━━━━━━━━━━\n"
+        "📞 <b>Call</b>\n"
+        "Ikuti taruhan lawan agar tetap di tangan.\n"
+        "━━━━━━━━━━━━\n"
+        "⬆ <b>Raise</b>\n"
+        "Naikkan taruhan.\n"
+        "Biasanya dipakai jika kartumu bagus.\n"
+        "━━━━━━━━━━━━\n"
+        "❌ <b>Fold</b>\n"
+        "Menyerah di ronde ini.\n"
+        "Kartu dibuang; kamu tidak bisa menangkan pot.\n"
+        "Fold adalah strategi, bukan kegagalan!"
+    ),
+    "tut_ranking": (
+        "🏆 <b>Ranking Kartu</b>\n"
+        "<i>Terkuat → terlemah</i>\n\n"
+        "🥇 <b>Royal Flush</b>\n"
+        "10 J Q K A – satu suit\n"
+        "━━━━━━━━━━━━\n"
+        "🥈 <b>Straight Flush</b>\n"
+        "Lima berurutan, satu suit (contoh 5♥6♥7♥8♥9♥)\n"
+        "━━━━━━━━━━━━\n"
+        "🥉 <b>Four of a Kind</b>\n"
+        "Empat kartu sama (contoh 7♠7♥7♣7♦)\n"
+        "━━━━━━━━━━━━\n"
+        "4️⃣ <b>Full House</b>\n"
+        "Tiga + Pair (contoh K K K + 8 8)\n"
+        "━━━━━━━━━━━━\n"
+        "5️⃣ <b>Flush</b>\n"
+        "Lima satu suit, rank apa saja (♥♥♥♥♥)\n"
+        "━━━━━━━━━━━━\n"
+        "6️⃣ <b>Straight</b>\n"
+        "Lima berurutan (contoh 6 7 8 9 10)\n"
+        "━━━━━━━━━━━━\n"
+        "7️⃣ <b>Three of a Kind</b>\n"
+        "Tiga kartu sama (contoh 7♠7♥7♣)\n"
+        "━━━━━━━━━━━━\n"
+        "8️⃣ <b>Two Pair</b>\n"
+        "Dua pair berbeda\n"
+        "━━━━━━━━━━━━\n"
+        "9️⃣ <b>Pair</b>\n"
+        "Dua kartu sama (contoh A♠ A♦)\n"
+        "━━━━━━━━━━━━\n"
+        "🔟 <b>High Card</b>\n"
+        "Tidak ada kombinasi – kartu tertinggi menang"
+    ),
+    "tut_tips": (
+        "💡 <b>Tips Bermain</b>\n\n"
+        "• Pair lebih kuat daripada High Card.\n"
+        "• Jangan selalu Raise – pilih-pilih.\n"
+        "• Fold adalah strategi pintar, bukan kalah.\n"
+        "• Community Cards dipakai semua pemain.\n"
+        "• Check saja jika kartu masih jelek.\n"
+        "• Sabar lebih baik daripada agresif terus.\n"
+        "• Perhatikan kombinasi yang mungkin dari board.\n"
+        "• 2 kartu pribadi paling berharga saat nyambung ke board.\n"
+        "• Jika hanya satu pemain tersisa (lainnya fold), dia menang otomatis."
+    ),
+    "tut_faq": (
+        "❓ <b>FAQ</b>\n\n"
+        "<b>Q: Community Cards milik siapa?</b>\n"
+        "A: Tidak milik siapa pun – dipakai bersama semua pemain.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Bagaimana bot menentukan pemenang?</b>\n"
+        "A: Bot menghitung kombinasi 5 kartu terbaik dari "
+        "2 hole + 5 community, lalu membandingkan ranking.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Kalau kombinasi sama?</b>\n"
+        "A: Dibandingkan kicker (kartu samping). Seri murni = split pot.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Kenapa Pair saya kalah?</b>\n"
+        "A: Lawan punya kombinasi lebih tinggi "
+        "(Two Pair, Straight, Flush, dll.) atau pair lebih tinggi.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Apakah Fold berarti kalah?</b>\n"
+        "A: Tidak. Kamu hanya keluar dari ronde ini. Fold untuk hindari kerugian lebih besar.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Bisa lihat kartu hole lawan?</b>\n"
+        "A: Hanya di Showdown (jika mereka tidak fold).\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Berapa pemain per room?</b>\n"
+        "A: Minimal 2, maksimal 6."
     ),
 }

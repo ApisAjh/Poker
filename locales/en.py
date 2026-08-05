@@ -116,35 +116,181 @@ TEXTS = {
     "street_showdown": "Showdown",
     "street_finished": "Finished",
 
-    # ----- tutorial -----
-    "tutorial": (
-        "📖 <b>How To Play</b>\n\n"
-        "Your goal is to build the best possible poker hand.\n\n"
+    # ----- help / start extras -----
+    "help_menu_hint": "\n\n📚 Type /tutorial for the full interactive guide.",
+
+    # ----- first-time welcome -----
+    "welcome_first": (
+        "👋 <b>Welcome to Texas Hold'em!</b>\n\n"
+        "Is this your first time playing?\n\n"
+        "We recommend reading the short guide first."
+    ),
+    "welcome_btn_tutorial": "📖 Tutorial",
+    "welcome_btn_skip": "▶ Skip",
+
+    # ----- tutorial menu & nav -----
+    "tut_menu": (
+        "📚 <b>Poker Guide</b>\n\n"
+        "Choose a topic to learn.\n"
+        "Perfect if you have never played Texas Hold'em before."
+    ),
+    "tut_btn_basics": "📖 Poker Basics",
+    "tut_btn_flow": "🎮 How to Play",
+    "tut_btn_examples": "🃏 Example Hands",
+    "tut_btn_ranking": "🎴 Hand Rankings",
+    "tut_btn_buttons": "🎯 Button Meanings",
+    "tut_btn_tips": "💡 Playing Tips",
+    "tut_btn_faq": "❓ FAQ",
+    "tut_btn_lang": "🌐 Change Language",
+    "tut_btn_prev": "⬅ Previous",
+    "tut_btn_home": "🏠 Home",
+    "tut_btn_next": "➡ Next",
+
+    # ----- tutorial pages -----
+    "tut_basics": (
+        "📖 <b>What is Texas Hold'em?</b>\n\n"
+        "Texas Hold'em is a card game.\n\n"
         "Each player receives:\n"
-        "• 2 Hole Cards\n\n"
-        "Combine them with:\n"
-        "• 5 Community Cards\n\n"
-        "<b>Game Flow</b>\n"
-        "1. Pre-Flop\n"
-        "2. Flop\n"
-        "3. Turn\n"
-        "4. River\n"
-        "5. Showdown\n\n"
-        "<b>Buttons</b>\n"
-        "✅ <b>Check</b> – Pass without betting.\n"
-        "📞 <b>Call</b> – Match the current bet.\n"
-        "⬆ <b>Raise</b> – Increase the bet.\n"
-        "❌ <b>Fold</b> – Leave the current round.\n\n"
-        "<b>Hand Rankings</b> (strongest → weakest)\n"
-        "Royal Flush\n"
-        "Straight Flush\n"
-        "Four of a Kind\n"
-        "Full House\n"
-        "Flush\n"
-        "Straight\n"
-        "Three of a Kind\n"
-        "Two Pair\n"
-        "Pair\n"
-        "High Card"
+        "🃏 <b>2 private cards</b> (Hole Cards)\n"
+        "Only you can see them.\n\n"
+        "Then the bot reveals:\n"
+        "🂠🂠🂠🂠🂠\n"
+        "<b>5 Community Cards</b>\n"
+        "Shared by everyone.\n\n"
+        "Your goal: make the <b>best 5-card combination</b> "
+        "using your 2 hole cards + the 5 community cards "
+        "(7 cards total, pick the best 5)."
+    ),
+    "tut_flow": (
+        "🎮 <b>Game Flow</b>\n\n"
+        "🎮 Create Room  (/poker)\n"
+        "↓\n"
+        "👥 Players Join\n"
+        "↓\n"
+        "▶ Host Starts Game\n"
+        "↓\n"
+        "🃏 Everyone gets 2 hole cards\n"
+        "<i>Pre-Flop – decide Check / Raise / Fold</i>\n"
+        "↓\n"
+        "🃏 <b>Flop</b> – 3 community cards open\n"
+        "↓\n"
+        "🃏 <b>Turn</b> – 4th community card\n"
+        "↓\n"
+        "🃏 <b>River</b> – 5th community card\n"
+        "↓\n"
+        "🏁 <b>Showdown</b> – all cards revealed\n"
+        "↓\n"
+        "🏆 <b>Winner</b>\n\n"
+        "At each street, players take turns using the buttons."
+    ),
+    "tut_examples": (
+        "🃏 <b>Example Hands</b>\n\n"
+        "<b>Example 1</b>\n"
+        "Community: 2♦ 7♣ J♠ 5♥ K♣\n"
+        "Your cards: J♦ 4♠\n"
+        "Result: ✅ <b>Pair</b> (two Jacks)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Example 2</b>\n"
+        "Community: 8♣ 9♦ 10♠ J♣ 2♥\n"
+        "Your cards: Q♦ K♦\n"
+        "Result: ✅ <b>Straight</b> (8-9-10-J-Q)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Example 3</b>\n"
+        "Community: A♥ A♣ 7♠ 3♦ 2♣\n"
+        "Your cards: A♦ K♠\n"
+        "Result: ✅ <b>Three of a Kind</b> (three Aces)\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Example 4</b>\n"
+        "Community: K♥ 9♥ 2♥ 5♣ 8♦\n"
+        "Your cards: A♥ 3♥\n"
+        "Result: ✅ <b>Flush</b> (five hearts)"
+    ),
+    "tut_buttons": (
+        "🎯 <b>Button Meanings</b>\n\n"
+        "✅ <b>Check</b>\n"
+        "Pass your turn without betting.\n"
+        "Use when no one has raised yet and you want to stay in cheaply.\n"
+        "━━━━━━━━━━━━\n"
+        "📞 <b>Call</b>\n"
+        "Match the current bet to stay in the hand.\n"
+        "━━━━━━━━━━━━\n"
+        "⬆ <b>Raise</b>\n"
+        "Increase the bet.\n"
+        "Use when your hand looks strong.\n"
+        "━━━━━━━━━━━━\n"
+        "❌ <b>Fold</b>\n"
+        "Give up this round.\n"
+        "Your cards are discarded; you cannot win the pot.\n"
+        "Fold is a strategy, not a failure!"
+    ),
+    "tut_ranking": (
+        "🏆 <b>Hand Rankings</b>\n"
+        "<i>Strongest → weakest</i>\n\n"
+        "🥇 <b>Royal Flush</b>\n"
+        "10 J Q K A – same suit\n"
+        "━━━━━━━━━━━━\n"
+        "🥈 <b>Straight Flush</b>\n"
+        "Five in a row, same suit (e.g. 5♥6♥7♥8♥9♥)\n"
+        "━━━━━━━━━━━━\n"
+        "🥉 <b>Four of a Kind</b>\n"
+        "Four same rank (e.g. 7♠7♥7♣7♦)\n"
+        "━━━━━━━━━━━━\n"
+        "4️⃣ <b>Full House</b>\n"
+        "Three + Pair (e.g. K K K + 8 8)\n"
+        "━━━━━━━━━━━━\n"
+        "5️⃣ <b>Flush</b>\n"
+        "Five same suit, any ranks (♥♥♥♥♥)\n"
+        "━━━━━━━━━━━━\n"
+        "6️⃣ <b>Straight</b>\n"
+        "Five in a row (e.g. 6 7 8 9 10)\n"
+        "━━━━━━━━━━━━\n"
+        "7️⃣ <b>Three of a Kind</b>\n"
+        "Three same rank (e.g. 7♠7♥7♣)\n"
+        "━━━━━━━━━━━━\n"
+        "8️⃣ <b>Two Pair</b>\n"
+        "Two different pairs\n"
+        "━━━━━━━━━━━━\n"
+        "9️⃣ <b>Pair</b>\n"
+        "Two same rank (e.g. A♠ A♦)\n"
+        "━━━━━━━━━━━━\n"
+        "🔟 <b>High Card</b>\n"
+        "Nothing special – highest card wins"
+    ),
+    "tut_tips": (
+        "💡 <b>Playing Tips</b>\n\n"
+        "• A Pair is stronger than High Card.\n"
+        "• Don't Raise every hand – be selective.\n"
+        "• Folding is smart strategy, not losing.\n"
+        "• Community cards are shared by everyone.\n"
+        "• Check is fine when your cards are weak.\n"
+        "• Patience beats constant aggression.\n"
+        "• Watch what combinations the board allows.\n"
+        "• Your 2 hole cards matter most when they connect with the board.\n"
+        "• If only one player remains (others folded), they win automatically."
+    ),
+    "tut_faq": (
+        "❓ <b>FAQ</b>\n\n"
+        "<b>Q: Who owns the Community Cards?</b>\n"
+        "A: Nobody – they are shared by all players.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: How does the bot pick a winner?</b>\n"
+        "A: It finds each player's best 5-card hand from "
+        "2 hole + 5 community cards, then compares rankings.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: What if two players have the same combination?</b>\n"
+        "A: Kickers (side cards) decide. True ties split the pot.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Why did my Pair lose?</b>\n"
+        "A: The opponent had a higher ranking hand "
+        "(Two Pair, Straight, Flush, etc.) or a higher pair.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Does Fold mean I lost the game?</b>\n"
+        "A: No. You only leave this round. Fold to avoid bigger losses.\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: Can I see other players' hole cards?</b>\n"
+        "A: Only at Showdown (if they didn't fold).\n"
+        "━━━━━━━━━━━━\n"
+        "<b>Q: How many players per room?</b>\n"
+        "A: Minimum 2, maximum 6."
     ),
 }
