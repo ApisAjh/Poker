@@ -43,7 +43,6 @@ All actions also available via **inline keyboard**.
 ## Project Structure
 
 ```
-telegram-poker-bot/
 ├── api/
 │   └── index.py          # Vercel / FastAPI entry point
 ├── bot/
