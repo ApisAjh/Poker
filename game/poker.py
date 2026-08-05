@@ -53,6 +53,7 @@ class PokerGame:
     chat_id: int
     host_id: int
     host_name: str
+    lang: str = "en"  # display language for shared room/game messages
     players: Dict[int, Player] = field(default_factory=dict)
     state: GameState = GameState.WAITING
     deck: Optional[Deck] = None
@@ -91,19 +92,19 @@ class PokerGame:
 
     def add_player(self, user_id: int, name: str) -> str:
         if self.state != GameState.WAITING:
-            return "Game already started."
+            return "game_started_already"
         if user_id in self.players:
-            return "You already joined."
+            return "already_joined"
         if self.player_count >= self.max_players:
-            return f"Room full (max {self.max_players})."
+            return "room_full"
         self.players[user_id] = Player(user_id=user_id, name=name)
         return "ok"
 
     def remove_player(self, user_id: int) -> str:
         if self.state != GameState.WAITING:
-            return "Cannot leave after game started."
+            return "cannot_leave_started"
         if user_id not in self.players:
-            return "You are not in this room."
+            return "not_in_room"
         del self.players[user_id]
         if user_id == self.host_id:
             return "host_left"
@@ -173,19 +174,19 @@ class PokerGame:
     def apply_action(self, user_id: int, action: PlayerAction) -> str:
         """Apply player action. Returns status message or 'ok'."""
         if self.state in (GameState.WAITING, GameState.SHOWDOWN, GameState.FINISHED):
-            return "Game is not in progress."
+            return "not_in_progress"
         if not self.is_player_turn(user_id):
             return "not_your_turn"
         player = self.players[user_id]
         if player.folded:
-            return "You already folded."
+            return "already_folded"
 
         if action == PlayerAction.FOLD:
             player.folded = True
             player.last_action = PlayerAction.FOLD
         elif action == PlayerAction.CHECK:
             if self.raised_this_street:
-                return "Cannot check – there is a raise. Call or fold."
+                return "cannot_check"
             player.last_action = PlayerAction.CHECK
         elif action == PlayerAction.CALL:
             player.last_action = PlayerAction.CALL
@@ -195,7 +196,7 @@ class PokerGame:
             # After a raise everyone else must respond again
             self.acted_this_street = {user_id}
         else:
-            return "Unknown action."
+            return "unknown_action"
 
         self.acted_this_street.add(user_id)
         self._advance_turn()
@@ -272,36 +273,74 @@ class PokerGame:
     # Rendering helpers (pure data – no Telegram objects)
     # ------------------------------------------------------------------
 
-    def render_room(self) -> str:
-        lines = ["🎮 <b>Poker Room</b>", ""]
+    def _street_key(self) -> str:
+        return {
+            GameState.WAITING: "street_waiting",
+            GameState.PREFLOP: "street_preflop",
+            GameState.FLOP: "street_flop",
+            GameState.TURN: "street_turn",
+            GameState.RIVER: "street_river",
+            GameState.SHOWDOWN: "street_showdown",
+            GameState.FINISHED: "street_finished",
+        }.get(self.state, "street_waiting")
+
+    @staticmethod
+    def _rank_key(rank: HandRank) -> str:
+        return {
+            HandRank.HIGH_CARD: "hand_rank_high_card",
+            HandRank.PAIR: "hand_rank_pair",
+            HandRank.TWO_PAIR: "hand_rank_two_pair",
+            HandRank.THREE_OF_A_KIND: "hand_rank_three",
+            HandRank.STRAIGHT: "hand_rank_straight",
+            HandRank.FLUSH: "hand_rank_flush",
+            HandRank.FULL_HOUSE: "hand_rank_full_house",
+            HandRank.FOUR_OF_A_KIND: "hand_rank_four",
+            HandRank.STRAIGHT_FLUSH: "hand_rank_straight_flush",
+            HandRank.ROYAL_FLUSH: "hand_rank_royal",
+        }.get(rank, "hand_rank_high_card")
+
+    def render_room(self, lang: str = "en") -> str:
+        from locales import t
+
+        lines = [t(lang, "room_title"), ""]
         if self.state == GameState.WAITING:
-            lines.append(f"<b>Host</b>\n👤 {self.host_name}")
+            lines.append(t(lang, "room_host", host=self.host_name))
             lines.append("")
-            lines.append("<b>Players</b>")
+            lines.append(t(lang, "room_players"))
             for p in self.player_list:
                 lines.append(f"👤 {p.name}")
             lines.append("")
             if self.player_count < self.min_players:
                 lines.append(
-                    f"<b>Status</b>\nWaiting Player... "
-                    f"({self.player_count}/{self.min_players})"
+                    t(
+                        lang,
+                        "room_status_waiting",
+                        count=self.player_count,
+                        min=self.min_players,
+                    )
                 )
             else:
                 lines.append(
-                    f"<b>Status</b>\nWaiting Host to start "
-                    f"({self.player_count}/{self.max_players})"
+                    t(
+                        lang,
+                        "room_status_ready",
+                        count=self.player_count,
+                        max=self.max_players,
+                    )
                 )
         return "\n".join(lines)
 
-    def render_game(self) -> str:
-        lines = ["🃏 <b>Texas Hold'em</b>", ""]
-        lines.append("<b>Players</b>")
+    def render_game(self, lang: str = "en") -> str:
+        from locales import t
+
+        lines = [t(lang, "game_title"), ""]
+        lines.append(t(lang, "label_players"))
         for p in self.player_list:
-            cards = "🂠🂠" if not p.folded else "❌ Folded"
+            cards = "🂠🂠" if not p.folded else t(lang, "folded")
             marker = " ⬅️" if self.is_player_turn(p.user_id) else ""
             lines.append(f"👤 {p.name}   {cards}{marker}")
         lines.append("")
-        lines.append("<b>Community Cards</b>")
+        lines.append(t(lang, "label_community"))
         if not self.community:
             lines.append("🂠 🂠 🂠 🂠 🂠")
         else:
@@ -312,24 +351,29 @@ class PokerGame:
         cur = self.current_player()
         if cur and self.state not in (GameState.SHOWDOWN, GameState.FINISHED):
             remaining = max(0, int(self.turn_deadline - time.time()))
-            lines.append(f"<b>Current Turn</b>\n👤 {cur.name} ({remaining}s)")
+            lines.append(
+                t(lang, "label_turn", name=cur.name, seconds=remaining)
+            )
         lines.append("")
-        lines.append(f"<b>Street</b>: {self.state.name.title()}")
+        lines.append(
+            t(lang, "label_street", street=t(lang, self._street_key()))
+        )
         return "\n".join(lines)
 
-    def render_showdown(self) -> str:
-        lines = ["🏁 <b>SHOWDOWN</b>", ""]
+    def render_showdown(self, lang: str = "en") -> str:
+        from locales import t
+
+        lines = [t(lang, "showdown_title"), ""]
         for p in self.player_list:
             if p.folded:
-                lines.append(f"👤 {p.name}\n❌ Folded")
+                lines.append(f"👤 {p.name}\n{t(lang, 'folded')}")
             else:
                 cards = " ".join(c.display() for c in p.hole_cards)
                 score = self.get_hand_score(p)
-                lines.append(
-                    f"👤 {p.name}\n{cards}\n→ {score.rank.label}"
-                )
+                rank_label = t(lang, self._rank_key(score.rank))
+                lines.append(f"👤 {p.name}\n{cards}\n→ {rank_label}")
             lines.append("")
-        lines.append("<b>Community</b>")
+        lines.append(t(lang, "label_community_short"))
         lines.append(" ".join(c.display() for c in self.community))
         lines.append("")
 
@@ -337,16 +381,18 @@ class PokerGame:
         if len(winners) == 1:
             w = winners[0]
             score = self.get_hand_score(w)
-            lines.append("🏆 <b>Winner</b>")
+            rank_label = t(lang, self._rank_key(score.rank))
+            lines.append(t(lang, "winner_title"))
             lines.append(f"👤 {w.name}")
-            lines.append(f"<b>Combination</b>\n{score.rank.label}")
+            lines.append(t(lang, "combination", combination=rank_label))
             lines.append("")
-            lines.append("🎉 Congratulations!")
+            lines.append(t(lang, "congrats"))
         else:
-            lines.append("🤝 <b>Split Pot</b>")
+            lines.append(t(lang, "split_pot"))
             for w in winners:
                 score = self.get_hand_score(w)
-                lines.append(f"👤 {w.name} – {score.rank.label}")
+                rank_label = t(lang, self._rank_key(score.rank))
+                lines.append(f"👤 {w.name} – {rank_label}")
             lines.append("")
-            lines.append("🎉 Congratulations!")
+            lines.append(t(lang, "congrats"))
         return "\n".join(lines)
