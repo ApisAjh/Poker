@@ -45,18 +45,16 @@ def game_keyboard(
     lang: str = "en",
     mode: GameMode | None = None,
     chat_id: int = 0,
-    turn_label: str = "",
+    turn_label: str = "",  # kept for API compat; not shown on button
 ) -> InlineKeyboardMarkup:
-    """Classic: action buttons. Private: Open Hand (switch inline)."""
+    """Classic: action buttons. Private: UNO-style switch-inline button."""
     if mode == GameMode.PRIVATE:
-        btn_text = t(lang, "btn_open_hand")
-        if turn_label:
-            btn_text = f"{btn_text} · {turn_label}"
+        # Same pattern as UNO bots — short label, no player name in button
         return InlineKeyboardMarkup(
             [
                 [
                     InlineKeyboardButton(
-                        btn_text,
+                        t(lang, "btn_open_hand"),
                         switch_inline_query_current_chat=f"hand {chat_id}",
                     ),
                 ],
