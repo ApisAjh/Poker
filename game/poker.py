@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -45,10 +46,19 @@ class Player:
 
     @property
     def mention(self) -> str:
-        """Display name with @username when available."""
+        """Plain display: Name (@username). HTML-escaped for safe ParseMode.HTML."""
+        name = html.escape(self.name or "Player")
         if self.username:
-            return f"{self.name} (@{self.username})"
-        return self.name
+            # UNO-style: Name (@username) — no tg:// links (avoids 404 Not found)
+            return f"{name} (@{html.escape(self.username)})"
+        return name
+
+    @property
+    def short_name(self) -> str:
+        """Short label for buttons (no HTML)."""
+        if self.username:
+            return f"@{self.username}"
+        return (self.name or "Player")[:20]
 
 
 @dataclass
@@ -373,8 +383,9 @@ class PokerGame:
                     t(lang, "label_turn", name=cur.mention, seconds=remaining)
                 )
             else:
+                # Private / no-timer: UNO-style "Next player"
                 lines.append(
-                    t(lang, "label_turn_notimer", name=cur.mention)
+                    t(lang, "label_next_player", name=cur.mention)
                 )
         lines.append("")
         lines.append(
@@ -382,12 +393,7 @@ class PokerGame:
         )
         if self.mode and self.mode.value == "private":
             lines.append("")
-            if cur:
-                lines.append(
-                    t(lang, "private_turn_hint", player=cur.mention)
-                )
-            else:
-                lines.append(t(lang, "private_turn_hint", player="–"))
+            lines.append(t(lang, "private_turn_hint"))
         if self.mode:
             lines.append("")
             lines.append(t(lang, self.mode.label_key))
