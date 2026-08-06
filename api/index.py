@@ -18,6 +18,9 @@ from telegram.ext import (
     Application,
     CallbackQueryHandler,
     CommandHandler,
+    InlineQueryHandler,
+    MessageHandler,
+    filters,
 )
 
 from bot.handlers import (
@@ -33,7 +36,11 @@ from bot.handlers import (
     cmd_start,
     cmd_startgame,
     cmd_tutorial,
+    games,
 )
+from bot.inline import bind_games, inline_query_handler, process_private_action_message
+
+bind_games(games)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -68,6 +75,13 @@ ptb.add_handler(CommandHandler("players", cmd_players))
 ptb.add_handler(CommandHandler("startgame", cmd_startgame))
 ptb.add_handler(CommandHandler("cancel", cmd_cancel))
 ptb.add_handler(CallbackQueryHandler(callback_handler))
+ptb.add_handler(InlineQueryHandler(inline_query_handler))
+ptb.add_handler(
+    MessageHandler(
+        filters.TEXT & filters.Regex(r"§P§"),
+        process_private_action_message,
+    )
+)
 
 
 @asynccontextmanager
@@ -79,7 +93,12 @@ async def lifespan(app: FastAPI):
             try:
                 await ptb.bot.set_webhook(
                     url=WEBHOOK_URL.rstrip("/") + "/",
-                    allowed_updates=["message", "callback_query"],
+                    allowed_updates=[
+                        "message",
+                        "callback_query",
+                        "inline_query",
+                        "chosen_inline_result",
+                    ],
                     drop_pending_updates=True,
                 )
                 logger.info("Webhook set to %s", WEBHOOK_URL)
