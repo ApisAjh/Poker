@@ -63,6 +63,7 @@ TEXTS = {
     "game_title": "🃏 <b>Texas Hold'em</b>",
     "label_players": "<b>Pemain</b>",
     "label_community": "<b>Community Cards</b>",
+    "label_next_player": "<b>Giliran:</b> {name}",
     "label_turn_notimer": "<b>Giliran</b>\n👤 {name}",
     "label_turn": "<b>Giliran</b>\n👤 {name} ({seconds}s)",
     "label_street": "<b>Tahap</b>: {street}",
@@ -294,14 +295,15 @@ TEXTS = {
         "<b>Q: Berapa pemain per room?</b>\n"
         "A: Minimal 2, maksimal 6."
     ),
-    # ----- game modes -----
+
+    # ----- game modes & private inline -----
     "mode_select_title": "🎮 <b>Pilih Mode Permainan</b>\n\nPilih cara bermain untuk room ini.",
     "mode_classic": "♠ Poker Classic",
     "mode_private": "🃏 Poker Private",
     "mode_classic_desc": "Semua aksi di grup. Cepat & sederhana.",
-    "mode_private_desc": "Kartu pribadi hanya lewat Inline Mode. Privasi seperti poker sungguhan.",
-    "btn_open_hand": "🎴 Open Hand",
-    "private_turn_hint": "👉 {player} — tekan tombol di bawah untuk membuka kartumu.",
+    "mode_private_desc": "Kartu pribadi hanya lewat Inline Mode.",
+    "btn_open_hand": "🎴 Make your choice!",
+    "private_turn_hint": "👇 Tekan <b>Make your choice!</b> lalu pilih aksi.",
     "inline_not_in_game": "❌ Anda tidak sedang bermain.",
     "inline_game_over": "❌ Game telah berakhir.",
     "inline_not_your_turn": "❌ Bukan giliranmu.",
@@ -312,30 +314,20 @@ TEXTS = {
     "inline_desc_fold": "Fold – keluar dari ronde",
     "inline_action_posted": "👤 {player}\n{action}",
     "private_help_inline": "Ketik @{bot} di chat ini untuk membuka kartu.",
-
-
     "tut_btn_modes": "🎮 Mode Permainan",
     "tut_modes": (
         "🎮 <b>Mode Permainan</b>\n\n"
         "Bot ini punya dua cara bermain.\n\n"
         "━━━━━━━━━━━━\n"
         "♠ <b>Poker Classic</b>\n\n"
-        "Mode sederhana.\n"
         "Semua aksi langsung di grup.\n"
-        "Saat giliranmu bot menampilkan tombol:\n"
-        "✅ Check  📞 Call  ⬆ Raise  ❌ Fold\n\n"
-        "Kartu hole tetap tersembunyi (🂠🂠) sampai showdown.\n"
-        "Cocok untuk permainan cepat.\n"
+        "Saat giliran: ✅ Check  📞 Call  ⬆ Raise  ❌ Fold\n\n"
+        "Kartu hole tetap tersembunyi sampai showdown.\n"
         "━━━━━━━━━━━━\n"
         "🃏 <b>Poker Private</b>\n\n"
-        "Terinspirasi bot UNO Telegram.\n"
-        "Permainan tetap di grup, tapi 2 kartu\n"
-        "pribadi hanya terlihat oleh pemiliknya.\n\n"
-        "Saat giliranmu tekan:\n"
-        "🎴 <b>Open Hand</b>\n\n"
-        "Inline Mode Telegram menampilkan kartu <b>hanya milikmu</b>.\n"
-        "Pilih Check / Call / Raise / Fold di sana.\n"
-        "Grup hanya melihat aksi, bukan kartumu.\n\n"
-        "Seperti privasi poker sungguhan."
-    )
+        "Seperti bot UNO Telegram.\n"
+        "Tekan <b>Make your choice!</b> → lihat kartu SENDIRI\n"
+        "→ pilih aksi. Grup tidak pernah melihat kartumu."
+    ),
+
 }
